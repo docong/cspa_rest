@@ -1,221 +1,159 @@
-swagger: 2
+swagger: '2.0'
 info:
-  title: LEL API
-  description: Linear Error Localization for data
-  version: "0.1.0"
-# the domain of the service
-# host: api.uber.com
-# array of all schemes that your API supports
+  description: '本文档包含vega网关的使用说明和接口列表. '
+  version: 1.0.0
+  title: Vega 微服务平台
+  license:
+    name: G7 内部接口调用协议1.0
+    url: 'http://api.huoyunren.com/licenses/g7-internal-1.0.html'
+host: api.huoyunren.com
 schemes:
   - http
-  - https
-# will be prefixed to all paths
-basePath: /v1
-produces:
-  - application/json
-  - text/csv
-consumes:
-  - application/json
-  - text/csv
 paths:
-  /LEL/job:
+  '/{version}/{serviceName}/{resourcePath}':
     post:
-      summary: Create a LEL request
-      description: Create a LEL request
+      tags:
+        - vega网关
+      description: |
+          多行描述示例：
+          
+          签名算法：
+          ```
+          
+          Authorization = "g7" + " " +AccessId + ":" + Signature;
+          
+          Signature = Base64( HMAC_SHA1( YourSecretAccessID, UTF_8_Encoding_Of( StringToSign ) ) );
+          
+          StringToSign = HTTP_Verb + "\n" +	Timestamp + "\n" + CanonicalizedResource;
+          
+          CanonicalizedResource就是资源路径，比如” /v1/ucencent/new_uc/users”。```
+          
+          
+          
+          注意：
+          
+          1. 请求必须有 g7timestamp, 精确到毫秒: GET /v1/service/resource?g7timestamp=1502350633000
+          
+          2. 拼接 stringToSign(___"\n"表示换行___)：
+
+          例如：
+          
+          ```
+            stringToSign=
+              "GET" + "\n"
+              + "1502350633000" + "\n" 
+              + "/v1/service/resource"
+          ```          
+          签名算法为：
+          ```
+          Signature = Base64( HMAC_SHA1( secretKey, UTF_8_Encoding_Of( StringToSign ) ) );
+          ```
+          例如secretKey是```test_key```，签名结果是
+          ```7vnEU6bFqRPKX1ZFFqZkHBT2aKI=```
+          
+          
+          炫耀一下swagger的描述里面是可以画表格上面的:
+            
+          type | definition
+          -----|-----------
+          Vinyl| 是
+          VHS  | #/definitions/VHS
+          AudioCassette | #/definitions/AudioCassette
+
+
+
+
+
+      operationId: serviceName
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
-        - name: body
-          in: body
-          description: |
-            Create a LEL job supplying the input 
-            parameters
-          schema: 
-            name: 
-              type: string
-            input:
-              $ref: Input
-      responses:
-        200:
-          description: Newly created job
-          schema:
-            $ref: Job
-    get:
-      summary: LEL jobs
-      description: The Jobs endpoint returns information about all jobs that have been submitted.
-      responses:
-        200:
-          description: List of jobs
+        - name: version
+          in: path
+          description: 版本号
+          required: true
+          type: string
+        - name: serviceName
+          in: path
+          description: 服务名
+          required: true
+          type: string
+        - name: resourcePath
+          in: path
+          description: 资源路径
+          required: true
+          type: string
+        - name: sign
+          in: query
+          description: 签名
+          required: true
+          type: string
+        - name: g7timestamp
+          in: query
+          description: 签名时间戳，一个请求的签名必须在当前时间15分钟内进行
+          required: true
+          type: string
+        - name: token
+          in: query
+          description: Ucenter获取的登录token
+          required: false
+          type: string
+        - in: body
+          name: body
+          description: 请求体
+          required: false
           schema:
             type: array
-            $items: Job
-  /LEL/job/{id}:
-    get:
-      summary: Get LEL Job info
-      description: Return the status and information on a LEL job.
-      parameters:
-        - name: id
-          in: path
-          description: id of job
-          required: true
-          type: string
-      tags: 
-        - LEL
-      responses:  
-        200:
-          description: Job description
-          schema:
-            $ref: Job
-        default:
-          description: Unexpected error
-          schema:
-            $ref: Error
-  /LEL/job/{id}/result/adapt/data:
-    get:
-      summary: get erronous data fields
-      description: |
-        Show per record, which of the fields are erronous according to the principle of Felligi-Holt.
-        The csv file has the same number of rows and columns as the input.data DataSet, but contains
-        true or false values.
-      parameters:
-        - name: id
-          in: path
-          description: id of job
-          required: true
-          type: string
+            items:
+              $ref: '#/definitions/RequestBody'
       responses:
-        200:
-          description: csv data
+        '200':
+          description: 网关返回对象
           schema:
-            type: file
-  /LEL/job/{id}/result/adapt/schema:
-    get:
-      summary: Schema for adapt.data.
-      description: Schema for adapt.data.
-      parameters:
-        - name: id
-          in: path
-          description: id of job
-          required: true
-          type: string
-      responses:
-        200:
-          description: json table schema
-          schema:
-            type: file
-  /LEL/job/{id}/result/status/data:
-    get:
-      summary: Get status per record
-      description: Retrieve the processing information per record
-      parameters:
-        - name: id
-          in: path
-          description: id of job
-          required: true
-          type: string
-      responses:
-        200:
-          description: csv data
-          schema:
-            type: file
-  /LEL/job/{id}/result/status/schema:
-    get:
-      summary: Structure of status file.
-      description: Structure of status file.
-      parameters:
-        - name: id
-          in: path
-          description: id of job
-          required: true
-          type: string
-      responses:
-        200:
-          description: json table schema
-          schema:
-            type: file
-  /LEL/job/{id}/result/log:
-    get:
-      summary: get logging information of job.
-      description: get logging information of job.
-      parameters:
-        - name: id
-          in: path
-          description: id of job
-          required: true
-          type: string
-      responses:
-        200:
-          description: text file with logging information.
-          schema:
-            type: file
+            type: array
+            items:
+              $ref: '#/definitions/ApiResponse'
+        '405':
+          description: Invalid input
+          
+          
 definitions:
-  Job:
+  RequestBody:
+    type: object
     properties:
-      id: 
+      request:
         type: string
-        required: yes 
-      name:
-        type: string
-        required: yes
-      status:
-        type: string
-      created:
-        type: string
-        format: date-time
-      url:
-        type: string
-        format: url
-      input:
-        type: Input
-        description: "input parameters" 
-        $ref: Input
-      result:
-        type: Result
-        $ref: Result
-      started:
-        type: string
-        format: date-time
-      ended:
-        type: string
-        format: date-time
-  DataSet:
-    properties:
-      data: 
-        type: file
-        description: csv data file
-      schema:
-        type: file
-        description: |
-          *json table schema* describing the data structure of the *csv* data.
-  Error:
+        description: 请求体
+    xml:
+      name: RequestBody
+  ApiResponse:
+    type: object
     properties:
       code:
         type: integer
         format: int32
+        description: 网关状态码
+      sub_code:
+        type: integer
+        format: int32
+        description: 服务状态码
+      type:
+        type: string
       message:
         type: string
-      fields:
-        type: string
-  Input:
-    properties:
-      data:
-        type: DataSet
-        description: Data to be checked.
-        required: yes
-        $ref: DataSet
-      rules:
-        type: string
-        format: url
-        description: file with linear rules
-        required: yes
-      weight:
-        type: string
-        format: url
-        description: File with weights to be used in error localization. Weight must be have same structure as input.data.
-        required: no
+      result:
+        $ref: '#/definitions/Result'
   Result:
+    type: object
     properties:
-      adapt:
-        type: DataSet
-        $ref: DataSet
-      status:
-        type: DataSet
-        $ref: DataSet
+      code:
+        type: integer
+        format: int32
+        description: 服务状态码
+      message:
+        type: string
+externalDocs:
+  description: 访问权限申请流程
+  url: 'http://wiki.chinawayltd.com/pages/viewpage.action?pageId=7550092'
