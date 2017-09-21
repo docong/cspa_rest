@@ -1,0 +1,247 @@
+swagger: '2.0'
+info:
+  description: 主从数据库下沉接口
+  version: 1.0.0
+  title: 主从数据库下沉
+schemes:
+  - http
+paths:
+  /getBindListByPage:
+    post:
+      tags:
+        - 主从
+      summary: 分页获取绑定列表
+      description: ''
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: 获取绑定列表参数
+          schema:
+            $ref: '#/definitions/GetBindList'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/BindResult'
+  /getBindLogListByPage:
+    post:
+      tags:
+        - 主从
+      summary: 分页获取绑定日志列表
+      description: ''
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: 获取绑定列表参数
+          schema:
+            $ref: '#/definitions/GetBindLogList'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/BindLogResult'
+  /bindSlaveDevice:
+    post:
+      tags:
+        - 主从
+      summary: 绑定从设备
+      description: 一个主设备不能绑定多个同一类型的从设备
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: 绑定参数
+          schema:
+            $ref: '#/definitions/BindSlaveDevice'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/ApiResponse'
+  /unbindSlaveDevice:
+    post:
+      tags:
+        - 主从
+      summary: 解绑从设备
+      description: 解绑从设备，不删除记录，而将主设备号置为0
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: 解绑参数
+          schema:
+            $ref: '#/definitions/UnBindSlaveDevice'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/ApiResponse'
+definitions:
+  ApiResponse:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      type:
+        type: string
+      message:
+        type: string
+  Gpsnos:
+    type: array
+    items:
+      type: integer
+  Orgcodes:
+    type: array
+    items:
+      type: string
+  GetBindList:
+    type: object
+    required:
+      - pageNo
+      - pageSize
+    properties:
+      slaveGpsnos:
+        $ref: '#/definitions/Gpsnos'
+      masterGpsnos:
+        $ref: '#/definitions/Gpsnos'
+      orgcodes:
+        $ref: '#/definitions/Orgcodes'
+      orglk:
+        type: string
+      slaveType:
+        type: integer
+      pageNo:
+        type: integer
+      pageSize:
+        type: integer
+  BindResult:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      data:
+        type: object
+        properties:
+          totalCount:
+            type: integer
+          pageNo:
+            type: integer
+          pageSize:
+            type: integer
+          result:
+            type: array
+            items:
+              type: object
+              properties:
+                slaveGpsno:
+                  type: integer
+                slaveType:
+                  type: integer
+                slaveValidate:
+                  type: integer
+                masterGpsno:
+                  type: integer
+                orgroot:
+                  type: string
+                orgcode:
+                  type: string
+                dataSourceType:
+                  type: integer
+                supportType:
+                  type: string
+                updateTime:
+                  type: string
+                  format: data-time
+  GetBindLogList:
+    type: object
+    required:
+      - pageNo
+      - pageSize
+    properties:
+      slaveGpsnos:
+        $ref: '#/definitions/Gpsnos'
+      masterGpsnos:
+        $ref: '#/definitions/Gpsnos'
+      orglk:
+        type: string
+      operateType:
+        type: integer
+      pageNo:
+        type: integer
+      pageSize:
+        type: integer
+  BindLogResult:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      data:
+        type: object
+        properties:
+          totalCount:
+            type: integer
+          pageNo:
+            type: integer
+          pageSize:
+            type: integer
+          result:
+            type: array
+            items:
+              type: object
+              properties:
+                operater:
+                  type: string
+                operateType:
+                  type: integer
+                slaveGpsno:
+                  type: integer
+                masterGpsno:
+                  type: integer
+                updateTime:
+                  type: string
+                  format: data-time
+                desc:
+                  type: string
+  BindSlaveDevice:
+    type: object
+    properties:
+      slaveGpsno:
+        type: integer
+      slaveType:
+        type: integer
+      orgroot:
+        type: string
+      orgcode:
+        type: string
+      masterGpsno:
+        type: integer
+      dataSourceType:
+        type: integer
+      operater:
+        type: string
+  UnBindSlaveDevice:
+    type: object
+    properties:
+      slaveGpsno:
+        type: integer
