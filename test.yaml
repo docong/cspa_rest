@@ -8,9 +8,9 @@ info:
   description: |
     本文档包含vega网关的使用说明和接口列表. 所有发送到网关的请求必须符合以下格式，并且签名.
     这里使用一个合法的请求作为例子
-
-    > http://172.22.34.203:5555/v1/path_planning/truck/index?accessid=b167byj&sign=fSuKs38XvFEHH6iSwdmpuFKcxEg%3D&token=c071d9d753ab0c26e62e0b80d789d09d&g7timestamp=1505195584540&pageNo=1&pageSize=10&start=2017-09-05+00:00:00&end=2017-09-12+23:59:59&customer=&average=0
-
+    ```
+    http://172.22.34.203:5555/v1/path_planning/truck/index?accessid=b167byj&sign=fSuKs38XvFEHH6iSwdmpuFKcxEg%3D&token=c071d9d753ab0c26e62e0b80d789d09d&g7timestamp=1505195584540&pageNo=1&pageSize=10&start=2017-09-05+00:00:00&end=2017-09-12+23:59:59&customer=&average=0
+    ```
     
     ## 请求格式 ``` /{version}/{serviceName}/{resourcePath} ```
       1. __version__: 必须是v1, v2, v3这种形式, 当前只支持```v1```
