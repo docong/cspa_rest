@@ -1,0 +1,287 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Vega 网关接口
+  license:
+    name: G7 内部接口调用协议1.0
+    url: 'http://api.huoyunren.com/licenses/g7-internal-1.0.html'
+  description: |
+    本文档包含vega网关的使用说明和接口列表. 所有发送到网关的请求必须符合以下格式，并且签名.
+    这里使用一个合法的请求作为例子
+
+    >http://172.22.34.203:5555/v1/path_planning/truck/index?accessid=b167byj&sign=fSuKs38XvFEHH6iSwdmpuFKcxEg%3D&token=c071d9d753ab0c26e62e0b80d789d09d&g7timestamp=1505195584540&pageNo=1&pageSize=10&start=2017-09-05+00:00:00&end=2017-09-12+23:59:59&customer=&average=0
+
+    
+    ## 请求格式 ``` /{version}/{serviceName}/{resourcePath} ```
+      1. __version__: 必须是v1, v2, v3这种形式, 当前只支持```v1```
+      2. __serviceName__: 注册到spring cloud的服务名称，并且小写(在上面的例子中是```path_planning```)
+      3. __resourcePath__: 要请求的服务的资源路径(在上面的例子里面是```/truck/index```)
+    
+    ## 网关必要的请求参数
+      1. __accessid__ (required): ucenter的accessid
+      2. __sign__ (required): 按照以下签名算法得到的结果, __必须使用```urlencode```编码__
+      3. __token__ (not required): Ucenter获取的登录token
+      4. __g7timestamp__ (required): 13位的签名时间戳，一个请求的签名必须在当前时间15分钟内进行
+    
+    ## 签名算法
+      ```
+      Signature = Base64( HMAC_SHA1( YourSecretKey, UTF_8_Encoding_Of( StringToSign ) ) );
+  
+      StringToSign = HTTP_Verb + "\n" +	Timestamp + "\n" + CanonicalizedResource;
+      ```
+      __注意!```"\n"```表示换行符，不是字符串的\n __
+      1. __YourSecretKey__: 分配的YourSecretKey(上面的请求计算用的是``` Wgyokg4EC2dJKwOYwBu3zrZHgfnOYHWi ```) 
+      2. __HTTP_Verb__: http请求类型，比如GET, POST(上面的例子使用的```POST```方式)
+      3. __CanonicalizedResource__: 资源路径(```/v1/path_planning/truck/index```)
+      
+      上面的请求签名结果是```fSuKs38XvFEHH6iSwdmpuFKcxEg=```, 经过```urlencode```之后是```fSuKs38XvFEHH6iSwdmpuFKcxEg%3D```
+    ## 返回的公共结构
+    ```json
+    {
+            "code": 网关状态码,
+            "msg": 网关的错误信息,
+            "sub_code": 服务状态码,
+            "sub_msg": 业务的错误信息,
+            "data": {
+                      }
+    }
+    ```
+    
+host: api.huoyunren.com
+schemes:
+  - http
+paths:
+  '/{version}/{serviceName}/{resourcePath}':
+    post:
+      tags:
+        - vega网关
+      description: |
+          所有发送到网关的请求都必须满足此格式，且本文档中描述的方式签名。
+          注意：
+
+          1. 请求必须有 g7timestamp, 精确到毫秒(13位)
+          
+          2. 拼接 stringToSign(___"\n"表示换行___)，假设有这个请求```GET /v1/service/resource?g7timestamp=1502350633000```：
+            
+            ```
+              stringToSign=
+                "GET" + "\n"
+                + "1502350633000" + "\n"
+                + "/v1/service/resource"
+  
+            ```
+            签名算法为：
+            ```
+            Signature = Base64( HMAC_SHA1( secretKey, UTF_8_Encoding_Of( StringToSign ) ) );
+  
+            ```
+            例如secretKey是```test_key```，签名结果是
+            ```7vnEU6bFqRPKX1ZFFqZkHBT2aKI=```
+      operationId: serviceName
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: version
+          in: path
+          description: 版本号,必须是v1, v2这种形式，当前只有v1
+          required: true
+          type: string
+        - name: serviceName
+          in: path
+          description: 服务名,全小写
+          required: true
+          type: string
+        - name: resourcePath
+          in: path
+          description: 资源路径
+          required: true
+          type: string
+        - name: sign
+          in: query
+          description: 签名
+          required: true
+          type: string
+        - name: g7timestamp
+          in: query
+          description: 13位的签名时间戳，一个请求的签名必须在当前时间15分钟内进行
+          required: true
+          type: string
+        - name: token
+          in: query
+          description: Ucenter获取的登录token
+          required: false
+          type: string
+        - in: body
+          name: body
+          description: 请求体
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RequestBody'
+      responses:
+        '200':
+          description: 网关返回对象
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ApiResponse'
+        '405':
+          description: Invalid input
+  /accessId/create:
+    post:
+      tags:
+        - vega认证
+      description:
+        根据传入的用户信息创建accessid和secretkey，需管理员权限
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          description: 请求体
+          required: true
+          schema:
+            $ref: "#/definitions/accessId"
+
+
+      responses:
+        "200":
+          description: 请求成功
+          schema:
+            $ref: "#/definitions/accessIdResponse"
+        "404":
+          description: Not found Exception
+  /auth/validate:
+    get:
+      tags:
+        - vega认证
+      description:  进行认证校验
+      parameters:
+        - name: G7ac
+          in: header
+          type: string
+          description:  当使用core认证方式时必填，请求的header值
+        - name: Uc
+          in: header
+          type: string
+          description:  当使用ucenter认证方式时必填，请求的header值
+        - name: string_to_sign
+          in: query
+          type: string
+          description:  需要签名的字符串参数
+        - name: url
+          in: query
+          type: string
+          description: 传递给UCenter的url，因为UCenter需要验证用户是否可以访问某个资源
+        - name: subsystem
+          in: query
+          type: string
+          description: serviceId给用户中心作为应用鉴权
+      responses:
+        "200":
+          description:  请求成功
+          schema:
+           $ref: "#/definitions/AuthResult"
+        "404":
+         description: Not found Exception
+
+
+definitions:
+  RequestBody:
+    type: object
+    properties:
+      request:
+        type: string
+        description: 请求体
+    xml:
+      name: RequestBody
+  ApiResponse:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+        description: 网关状态码
+      sub_code:
+        type: integer
+        format: int32
+        description: 服务状态码
+      msg:
+        type: string
+        description: 网关的错误信息
+      sub_msg:
+        type: string
+        description: 业务的错误信息
+      data:
+        $ref: '#/definitions/Result'
+  Result:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+        description: 服务状态码
+      message:
+        type: string
+  accessId:
+    type: object
+    properties:
+      applicant:
+        type: string
+        description: 申请人
+      applicationName:
+        type: string
+        description: 应用名称
+      accessIdType:
+        type: integer
+        format: int32
+        description:  创建的accessId类型，0:前端用accessId,1:后端用accessId
+      email:
+        type: string
+        description:  邮箱地址
+      phone:
+        type: string
+        description:  电话
+  accessIdResponse:
+    type: object
+    properties:
+      accessId:
+        type: string
+        description:  生成的accessid
+      secretKey:
+        type: string
+        description:  生成的secretkey
+      applicant:
+        type: string
+        description: 申请人
+      applicationName:
+        type: string
+        description: 应用名称
+      accessIdType:
+        type: integer
+        format: int32
+        description:  创建的accessId类型，0:前端用accessId,1:后端用accessId
+      email:
+        type: string
+        description:  邮箱地址
+      phone:
+        type: string
+        description:  电话
+  AuthResult:
+    type: object
+    properties:
+      status:
+        type: integer
+        format: int32
+        description:  认证状态
+      description:
+        type: string
+        description:  认证描述信息
+externalDocs:
+  description: 访问权限申请流程
+  url: 'http://wiki.chinawayltd.com/pages/viewpage.action?pageId=7550092'
